@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOB HQ — Command Center</title>
+<style>
+:root{
+  --plane:#0d0d0d; --surface:#1a1a19; --surface-2:#212120; --surface-3:#282826;
+  --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --baseline:#383835; --border:rgba(255,255,255,0.10);
+  --s1:#3987e5; --s2:#199e70; --s3:#d55181; --s4:#c98500; --s5:#9085e9; --s6:#d95926;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --blue-250:#86b6ef; --blue-400:#3987e5; --blue-550:#1c5cab;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--plane);color:var(--ink);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+
+/* Sidebar */
+.side{background:#0a0a0a;border-right:1px solid var(--border);padding:20px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:4px}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 8px 18px}
+.brand .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#111,#000);border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;font-weight:900;font-size:13px;letter-spacing:.5px;color:#fff}
+.brand b{font-size:16px;letter-spacing:.4px}
+.brand span{display:block;font-size:10.5px;color:var(--muted);font-weight:500;letter-spacing:.3px}
+.nav-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);padding:14px 8px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:var(--ink-2);cursor:pointer;font-weight:500;font-size:13.5px}
+.nav-item:hover{background:var(--surface-2);color:var(--ink)}
+.nav-item.active{background:var(--surface-3);color:var(--ink)}
+.nav-item .ico{width:16px;text-align:center;opacity:.9}
+.side-foot{margin-top:auto;padding:10px 8px;border-top:1px solid var(--border);font-size:11.5px;color:var(--muted)}
+.side-foot .dot{color:var(--muted)}
+
+/* Main */
+.main{padding:24px 30px 70px;max-width:1240px}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.crumb{font-size:12.5px;color:var(--muted)}
+.crumb b{color:var(--ink-2);font-weight:600}
+h1{font-size:22px;font-weight:700;letter-spacing:-.01em;margin-top:2px}
+.sub{color:var(--muted);font-size:13px;margin-top:3px}
+.btn{display:inline-flex;align-items:center;gap:7px;background:var(--s1);color:#fff;border:none;padding:9px 15px;border-radius:9px;font-weight:600;font-size:13px;cursor:pointer}
+.btn.ghost{background:var(--surface-2);color:var(--ink-2);border:1px solid var(--border)}
+.btn.sm{padding:6px 12px;font-size:12px}
+.btn:hover{filter:brightness(1.1)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Filter bar */
+.filters{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:12px}
+.fl-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-right:2px}
+.seg{display:flex;background:var(--surface-3);border-radius:9px;padding:3px;gap:2px}
+.seg button{background:none;border:none;color:var(--ink-2);padding:6px 11px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer}
+.seg button.on{background:var(--s1);color:#fff}
+.seg button:hover:not(.on){color:var(--ink)}
+.dd{position:relative}
+.dd-btn{display:inline-flex;align-items:center;gap:8px;background:var(--surface-3);border:1px solid var(--border);color:var(--ink);padding:7px 12px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer}
+.dd-panel{position:absolute;top:calc(100% + 6px);left:0;background:var(--surface-2);border:1px solid var(--border);border-radius:11px;padding:8px;min-width:230px;z-index:40;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+.dd-panel label{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:7px;cursor:pointer;font-size:13px}
+.dd-panel label:hover{background:var(--surface-3)}
+.dd-panel input{accent-color:var(--s1);width:15px;height:15px}
+.dd-foot{border-top:1px solid var(--border);margin-top:6px;padding-top:8px;display:flex;gap:6px}
+.date-in{display:flex;align-items:center;gap:6px}
+.date-in input{background:var(--surface-3);border:1px solid var(--border);color:var(--ink);border-radius:8px;padding:6px 9px;font-size:12.5px;font-family:inherit}
+.spacer{flex:1}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:8px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px}
+.kpi .lab{font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.kpi .val{font-size:26px;font-weight:700;margin-top:9px;letter-spacing:-.02em}
+.kpi .val small{font-size:14px;color:var(--ink-2);font-weight:600}
+.kpi .delta{font-size:12px;margin-top:6px;font-weight:600;color:var(--muted)}
+.up{color:var(--good)}
+
+.section-h{display:flex;align-items:center;justify-content:space-between;margin:26px 0 14px}
+.section-h h2{font-size:15px;font-weight:700}
+.section-h .hint{font-size:12px;color:var(--muted)}
+
+/* Business cards */
+.biz-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.biz-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;cursor:pointer;transition:border-color .15s,transform .15s}
+.biz-card:hover{border-color:rgba(57,135,229,.55);transform:translateY(-2px)}
+.biz-card.dim{opacity:.72}
+.biz-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.biz-ico{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;font-size:16px;font-weight:800;background:var(--surface-3);letter-spacing:.5px}
+.badge{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.05em}
+.badge.live{color:var(--good);background:rgba(12,163,12,.14);border:1px solid rgba(12,163,12,.3)}
+.badge.setup{color:var(--s1);background:rgba(57,135,229,.14);border:1px solid rgba(57,135,229,.32)}
+.badge.plan{color:var(--muted);background:var(--surface-2);border:1px solid var(--border)}
+.badge.paused{color:var(--warning);background:rgba(250,178,25,.12);border:1px solid rgba(250,178,25,.3)}
+.biz-card h3{font-size:16px;font-weight:700;margin:14px 0 3px}
+.biz-card .desc{font-size:12.5px;color:var(--muted);min-height:34px}
+.biz-mini{display:flex;gap:20px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.biz-mini .m-lab{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.biz-mini .m-val{font-size:16px;font-weight:700;margin-top:3px}
+.avstack{display:flex;margin-top:14px}
+.av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:10.5px;font-weight:700;color:#fff;border:2px solid var(--surface);margin-left:-7px}
+.av:first-child{margin-left:0}
+
+/* Detail */
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px;cursor:pointer;margin-bottom:14px}
+.back:hover{color:var(--ink)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:999px;border:1px solid var(--border);background:var(--surface)}
+.pill .d{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.grid-2{display:grid;grid-template-columns:1.35fr 1fr;gap:18px;margin-bottom:20px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px}
+.panel h4{font-size:13.5px;font-weight:700;margin-bottom:2px}
+.panel .p-sub{font-size:11.5px;color:var(--muted);margin-bottom:16px}
+.stat-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.st{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:15px}
+.st .stl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.st .stv{font-size:22px;font-weight:700;margin-top:6px}
+.st .std{font-size:11.5px;margin-top:4px;font-weight:600;color:var(--muted)}
+
+/* Funnel */
+.funnel-row{display:grid;grid-template-columns:120px 1fr 60px;align-items:center;gap:12px;margin-bottom:9px}
+.funnel-row .fl{font-size:12.5px;color:var(--ink-2)}
+.fbar-wrap{background:var(--surface-3);border-radius:6px;height:26px;overflow:hidden}
+.fbar{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:10px;font-size:12px;font-weight:700;color:#fff}
+.funnel-row .fpct{font-size:12px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.emptybox{padding:34px 16px;text-align:center;color:var(--muted);font-size:12.5px;border:1px dashed var(--border);border-radius:10px}
+
+/* Agents */
+.agents-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.agent{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px}
+.agent.paused{opacity:.62}
+.agent-h{display:flex;align-items:center;gap:11px}
+.agent-av{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0}
+.agent-h .an{font-weight:700;font-size:14px}
+.agent-h .ar{font-size:11.5px;color:var(--muted)}
+.status{margin-left:auto;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;border:1px solid var(--border);white-space:nowrap}
+.status .sd{width:7px;height:7px;border-radius:50%}
+.status.running{color:var(--good)} .status.running .sd{background:var(--good);box-shadow:0 0 0 3px rgba(12,163,12,.18)}
+.status.attention{color:var(--warning)} .status.attention .sd{background:var(--warning)}
+.status.paused{color:var(--warning)} .status.paused .sd{background:var(--warning)}
+.status.idle{color:var(--muted)} .status.idle .sd{background:var(--muted)}
+.agent-metrics{display:flex;gap:18px;margin:14px 0 12px}
+.agent-metrics .aml{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.agent-metrics .amv{font-size:17px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.score-wrap{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.score-bar{flex:1;height:6px;border-radius:3px;background:var(--surface-3);overflow:hidden}
+.score-fill{height:100%;border-radius:3px}
+.score-num{font-size:12.5px;font-weight:700;width:34px;text-align:right}
+.agent-foot{display:flex;gap:8px;align-items:center}
+.feedback{flex:1;background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--muted);border-radius:8px;padding:9px 11px;font-size:11.5px;color:var(--ink-2)}
+
+/* Table */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;padding:10px 12px;border-bottom:1px solid var(--border)}
+.tbl td{padding:12px;border-bottom:1px solid var(--border);font-size:13px}
+.tbl tr:last-child td{border-bottom:none}
+
+/* Modal / toast */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100}
+.modal-bg.on{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;width:420px;max-width:92vw}
+.modal h3{font-size:16px;margin-bottom:4px}
+.modal p{font-size:12.5px;color:var(--muted);margin-bottom:16px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11.5px;color:var(--ink-2);margin-bottom:5px;font-weight:600}
+.field input,.field textarea{width:100%;background:var(--surface-3);border:1px solid var(--border);color:var(--ink);border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit}
+.field textarea{resize:vertical;min-height:56px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:#000;border:1px solid var(--border);border-radius:10px;padding:11px 16px;font-size:13px;font-weight:600;opacity:0;transition:.25s;z-index:120;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.tt{position:fixed;pointer-events:none;background:#000;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;opacity:0;transition:opacity .1s;z-index:60}
+.hidden{display:none}
+/* Auth */
+#authScreen{position:fixed;inset:0;background:var(--plane);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+body.authed #authScreen{display:none}
+body:not(.authed) .app{display:none}
+.auth-card{width:390px;max-width:92vw;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px}
+.auth-brand{display:flex;align-items:center;gap:11px;margin-bottom:4px}
+.auth-brand .logo{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#111,#000);border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;font-weight:900;font-size:12px;letter-spacing:.5px}
+.auth-brand b{font-size:18px;letter-spacing:.4px}
+.auth-sub{color:var(--muted);font-size:12.5px;margin:2px 0 20px}
+.auth-err{color:var(--critical);font-size:12.5px;min-height:15px;margin:2px 0 8px}
+.auth-hint{color:var(--muted);font-size:11.5px;text-align:center;margin-top:14px;line-height:1.5}
+@media(max-width:960px){.app{grid-template-columns:1fr}.side{display:none}.kpis{grid-template-columns:repeat(2,1fr)}.biz-grid,.agents-grid,.grid-2,.stat-tiles{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-brand"><div class="logo">MOB</div><b>MOB HQ</b></div>
+    <div class="auth-sub">Sign in to your command center</div>
+    <div class="field"><label>Backend URL</label><input id="auApi" placeholder="https://your-app.up.railway.app"></div>
+    <div class="field"><label>Email</label><input id="auEmail" type="email" placeholder="you@email.com" autocomplete="username"></div>
+    <div class="field"><label>Password</label><input id="auPass" type="password" placeholder="At least 8 characters" autocomplete="current-password"></div>
+    <div id="auErr" class="auth-err"></div>
+    <button class="btn" id="auLogin" style="width:100%;justify-content:center">Sign in</button>
+    <button class="btn ghost" id="auReg" style="width:100%;justify-content:center;margin-top:8px;display:none">Create owner account</button>
+    <div class="auth-hint" id="auHint">Enter your Railway backend URL, then sign in.</div>
+  </div>
+</div>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="logo" id="brandLogo">MOB</div><div><b id="brandName">MOB HQ</b><span>Command Center</span></div></div>
+    <div class="nav-label">Workspace</div>
+    <div class="nav-item" data-view="overview"><span class="ico">▦</span> Overview</div>
+    <div class="nav-item" data-view="businesses"><span class="ico">◫</span> Businesses</div>
+    <div class="nav-item" data-view="agents"><span class="ico">◎</span> Agents</div>
+    <div class="nav-item" data-view="finance"><span class="ico">€</span> Finance</div>
+    <div class="nav-label">System</div>
+    <div class="nav-item" data-view="settings"><span class="ico">⚙</span> Settings</div>
+    <div class="side-foot"><span class="dot" id="footDot">●</span> <span id="footTxt">0 agents live · Day 0</span><br><span id="syncTxt" style="opacity:.75">Connecting…</span> · <a href="#" data-action="logout" style="color:var(--muted);text-decoration:underline">Log out</a></div>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modalBox"></div></div>
+<div class="toast" id="toast"></div>
+<div class="tt" id="tt"></div>
+
+<script>
+/* ---------------- STATE ---------------- */
+const AV_COLORS = ['var(--s1)','var(--s5)','var(--s3)','var(--s4)','var(--s2)','var(--s6)'];
+function initials(name){return name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();}
+function makeTeam(){
+  return [
+    {id:'maya',  name:'Maya Ford',    role:'Prospector — finds trades with weak/no website', metrics:[['Leads','0'],['Per day','0']]},
+    {id:'leo',   name:'Leo Marin',    role:'Qualifier — scores & ranks each lead',            metrics:[['Qualified','0'],['Pass rate','—']]},
+    {id:'sofia', name:'Sofia Renn',   role:'Demo Builder — makes a tailored draft site',       metrics:[['Demos','0'],['Avg build','—']]},
+    {id:'marcus',name:'Marcus Vale',  role:'Outreach — sends personalized email + follow-ups', metrics:[['Sent','0'],['Reply rate','—']]},
+    {id:'elena', name:'Elena Cruz',   role:'Closer — handles replies & books calls',           metrics:[['Replies','0'],['Booked','0']]},
+    {id:'david', name:'David Okoye',  role:'Finance/Ops — tracks spend, revenue & conversion', metrics:[['Tracked','€0'],['Margin','—']]}
+  ].map((a,i)=>({...a, color:AV_COLORS[i], status:'idle', connected:false, score:null}));
+}
+function emptyFunnel(){
+  return [['Leads found','var(--blue-250)'],['Qualified','var(--blue-400)'],['Demos built','var(--s1)'],
+          ['Outreach sent','var(--blue-550)'],['Replies','var(--s5)'],['Calls booked','var(--s2)'],['Clients closed','var(--good)']]
+          .map(([stage,c])=>({stage,c,v:0}));
+}
+
+const STATE = {
+  brand:'MOB HQ',
+  view:'overview',
+  detailId:null,
+  period:'7d',
+  customFrom:'', customTo:'',
+  ui:{bizDD:false},
+  businesses:[
+    {id:'webforge', code:'WA', name:'WebForge Agency', status:'setup',
+     desc:'We build & sell websites to local home-service trades. Lead-gen → tailored demo → outreach → close.',
+     niche:'Local home-service trades (roofers, HVAC, landscapers, electricians, plumbers)',
+     revenue:0, clients:0, cost:0, agents:makeTeam(), funnel:emptyFunnel()},
+    {id:'contentengine', code:'CE', name:'ContentEngine', status:'plan',
+     desc:'Agent team that researches, writes & publishes niche SEO sites earning via ads + affiliate.', blueprint:true},
+    {id:'leadflow', code:'LF', name:'LeadFlow SaaS', status:'plan',
+     desc:'Micro-SaaS: a self-serve version of our lead-finder, sold on subscription to other agencies.', blueprint:true},
+    {id:'designvault', code:'DV', name:'DesignVault', status:'paused',
+     desc:'Automated store of templates & digital products generated and listed by agents.', blueprint:true}
+  ],
+  selected:new Set(['webforge','contentengine','leadflow','designvault'])
+};
+
+const money = n => '€' + Number(n).toLocaleString('en-US');
+const PERIOD_LABEL = {'24h':'Last 24 hours','7d':'Last 7 days','14d':'Last 14 days','30d':'Last 30 days','custom':'Custom range'};
+
+/* ---------------- helpers ---------------- */
+function connectedCount(b){return (b.agents||[]).filter(a=>a.connected&&a.status!=='paused').length;}
+function liveAgentsTotal(){return STATE.businesses.reduce((s,b)=>s+(b.agents?connectedCount(b):0),0);}
+function activeBiz(){return STATE.businesses.filter(b=>b.status==='live'||b.status==='setup');}
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2200);}
+
+function updateChrome(){
+  document.getElementById('brandName').textContent = STATE.brand;
+  document.getElementById('brandLogo').textContent = STATE.brand.replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase()||'HQ';
+  const live=liveAgentsTotal();
+  document.getElementById('footTxt').textContent = live+' agent'+(live===1?'':'s')+' live · '+(live?'running':'Day 0');
+  document.getElementById('footDot').style.color = live? 'var(--good)':'var(--muted)';
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===STATE.view && !STATE.detailId));
+}
+
+/* ---------------- FILTER BAR ---------------- */
+function filterBar(){
+  const seg = ['24h','7d','14d','30d','custom'].map(p=>`<button data-period="${p}" class="${STATE.period===p?'on':''}">${p==='custom'?'Custom':p==='24h'?'24h':p==='7d'?'7 days':p==='14d'?'14 days':'30 days'}</button>`).join('');
+  const custom = STATE.period==='custom' ? `<div class="date-in"><input type="date" data-date="from" value="${STATE.customFrom}"><span style="color:var(--muted)">→</span><input type="date" data-date="to" value="${STATE.customTo}"></div>` : '';
+  const total = STATE.businesses.length, sel = STATE.selected.size;
+  const ddLabel = sel===total ? 'All businesses' : sel+' of '+total;
+  const checks = STATE.businesses.map(b=>`<label><input type="checkbox" data-check="${b.id}" ${STATE.selected.has(b.id)?'checked':''}> ${b.name}</label>`).join('');
+  const ddPanel = STATE.ui.bizDD ? `<div class="dd-panel">${checks}<div class="dd-foot"><button class="btn sm ghost" data-action="sel-all">Select all</button><button class="btn sm ghost" data-action="sel-none">Clear</button></div></div>`:'';
+  return `<div class="filters">
+    <span class="fl-label">Period</span><div class="seg">${seg}</div>${custom}
+    <span class="fl-label" style="margin-left:6px">Businesses</span>
+    <div class="dd"><button class="dd-btn" data-action="toggle-dd">${ddLabel} <span style="opacity:.6">▾</span></button>${ddPanel}</div>
+    <div class="spacer"></div>
+    <button class="btn ghost sm" data-action="export">⭳ Export</button>
+  </div>`;
+}
+
+/* ---------------- OVERVIEW ---------------- */
+function renderOverview(){
+  const shown = STATE.businesses.filter(b=>STATE.selected.has(b.id));
+  const live = liveAgentsTotal();
+  const kpis = [
+    {lab:'Revenue', val:money(0), d:PERIOD_LABEL[STATE.period]},
+    {lab:'Net profit', val:money(0), d:'no closed deals yet'},
+    {lab:'Tool spend', val:money(0)+'<small>/mo</small>', d:'set up your stack'},
+    {lab:'Open pipeline', val:money(0), d:'0 calls booked'},
+    {lab:'Live AI agents', val:live+'<small> / 6</small>', d:live?'running now':'connect to go live'}
+  ];
+  const kpiHtml = kpis.map(k=>`<div class="kpi"><div class="lab">${k.lab}</div><div class="val">${k.val}</div><div class="delta">${k.d}</div></div>`).join('');
+  const cards = shown.map(bizCard).join('') || `<div class="emptybox" style="grid-column:1/-1">No businesses selected — pick some from the Businesses filter above.</div>`;
+  return `<div class="topbar">
+      <div><div class="crumb"><b>${STATE.brand}</b> · Portfolio</div><h1>Portfolio Overview</h1>
+      <div class="sub">Every business you run, every agent working in it, and the money it makes — one screen.</div></div>
+      <button class="btn" data-action="new-biz">+ New business</button></div>
+    ${filterBar()}
+    <div class="kpis">${kpiHtml}</div>
+    <div class="section-h"><h2>Your businesses</h2><span class="hint">Click a business to drill into its agents & finances</span></div>
+    <div class="biz-grid">${cards}</div>
+    <div class="emptybox" style="margin-top:18px;text-align:left;padding:16px 18px">
+      <b style="color:var(--ink-2)">📍 Day 0 — this is your real dashboard.</b> Numbers are zero because no agent is working yet. They become real the moment you connect the first agent (open WebForge Agency → connect an agent to see it flip live).
+    </div>`;
+}
+
+function bizCard(b){
+  if(b.status==='plan'||b.status==='paused'){
+    const badge = b.status==='paused'?'<span class="badge paused">Paused</span>':'<span class="badge plan">Blueprint</span>';
+    return `<div class="biz-card dim" data-biz="${b.id}"><div class="biz-top"><div class="biz-ico">${b.code}</div>${badge}</div>
+      <h3>${b.name}</h3><div class="desc">${b.desc}</div>
+      <div class="biz-mini"><div><div class="m-lab">Status</div><div class="m-val" style="font-size:13px;color:var(--muted)">${b.status==='paused'?'On hold':'Ready to launch'}</div></div></div></div>`;
+  }
+  const badge = b.status==='live'?'<span class="badge live">● Live</span>':'<span class="badge setup">Setup</span>';
+  const ags = b.agents||[];
+  const avs = ags.slice(0,6).map(a=>`<div class="av" style="background:${a.color}" title="${a.name}">${initials(a.name)}</div>`).join('');
+  const conn = connectedCount(b);
+  return `<div class="biz-card" data-biz="${b.id}"><div class="biz-top"><div class="biz-ico">${b.code}</div>${badge}</div>
+    <h3>${b.name}</h3><div class="desc">${b.desc}</div>
+    <div class="biz-mini">
+      <div><div class="m-lab">Revenue</div><div class="m-val">${money(b.revenue)}</div></div>
+      <div><div class="m-lab">Clients</div><div class="m-val">${b.clients}</div></div>
+      <div><div class="m-lab">Agents live</div><div class="m-val">${conn}<span style="font-size:12px;color:var(--muted)"> / ${ags.length}</span></div></div>
+    </div>
+    <div class="avstack">${avs}</div></div>`;
+}
+
+/* ---------------- BUSINESSES / AGENTS / FINANCE / SETTINGS ---------------- */
+function renderBusinesses(){
+  return `<div class="topbar"><div><div class="crumb"><b>${STATE.brand}</b> · Businesses</div><h1>Businesses</h1>
+    <div class="sub">All ventures under ${STATE.brand}. Blueprints are ready-to-launch agent teams.</div></div>
+    <button class="btn" data-action="new-biz">+ New business</button></div>
+    <div class="biz-grid">${STATE.businesses.map(bizCard).join('')}</div>`;
+}
+
+function renderAgents(){
+  const rows = [];
+  STATE.businesses.filter(b=>b.agents).forEach(b=>b.agents.forEach(a=>rows.push({b,a})));
+  const body = rows.map(({b,a})=>{
+    const st = a.status==='paused'?'<span style="color:var(--warning)">● Paused</span>':a.connected?'<span style="color:var(--good)">● Running</span>':'<span style="color:var(--muted)">● Idle</span>';
+    let action;
+    if(!a.connected) action=`<button class="btn sm" data-action="connect" data-biz="${b.id}" data-agent="${a.id}">Connect</button>`;
+    else if(a.status==='paused') action=`<button class="btn sm ghost" data-action="resume" data-biz="${b.id}" data-agent="${a.id}">Resume</button>`;
+    else action=`<button class="btn sm ghost" data-action="pause" data-biz="${b.id}" data-agent="${a.id}">Pause</button>`;
+    return `<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="av" style="background:${a.color};margin:0">${initials(a.name)}</div><b>${a.name}</b></div></td>
+      <td style="color:var(--ink-2)">${a.role.split('—')[0]}</td><td style="color:var(--muted)">${b.name}</td><td>${st}</td><td>${action}</td></tr>`;
+  }).join('');
+  return `<div class="topbar"><div><div class="crumb"><b>${STATE.brand}</b> · Agents</div><h1>All Agents</h1>
+    <div class="sub">Your entire AI workforce across every business. Connect, pause, or resume any teammate.</div></div></div>
+    <div class="panel" style="padding:6px 6px"><table class="tbl"><thead><tr><th>Agent</th><th>Role</th><th>Business</th><th>Status</th><th></th></tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+function renderFinance(){
+  const rows = activeBiz().map(b=>`<tr><td><b>${b.name}</b></td><td>${money(b.revenue)}</td><td>${money(b.cost)}</td><td style="color:var(--good)">${money(b.revenue-b.cost)}</td></tr>`).join('')
+    || `<tr><td colspan="4" style="color:var(--muted)">No active businesses yet.</td></tr>`;
+  return `<div class="topbar"><div><div class="crumb"><b>${STATE.brand}</b> · Finance</div><h1>Finance</h1>
+    <div class="sub">Money in, money out, across the whole portfolio.</div></div></div>
+    ${filterBar()}
+    <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+      <div class="kpi"><div class="lab">Revenue</div><div class="val">${money(0)}</div><div class="delta">${PERIOD_LABEL[STATE.period]}</div></div>
+      <div class="kpi"><div class="lab">Costs</div><div class="val">${money(0)}</div><div class="delta">tools + ads</div></div>
+      <div class="kpi"><div class="lab">Net profit</div><div class="val">${money(0)}</div><div class="delta">—</div></div>
+      <div class="kpi"><div class="lab">Margin</div><div class="val">—</div><div class="delta">once revenue starts</div></div>
+    </div>
+    <div class="section-h"><h2>By business</h2></div>
+    <div class="panel" style="padding:6px 6px"><table class="tbl"><thead><tr><th>Business</th><th>Revenue</th><th>Cost</th><th>Net</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function renderSettings(){
+  return `<div class="topbar"><div><div class="crumb"><b>${STATE.brand}</b> · Settings</div><h1>Settings</h1>
+    <div class="sub">Configure your command center.</div></div></div>
+    <div class="panel" style="max-width:520px">
+      <div class="field"><label>Workspace name</label><input id="setBrand" value="${STATE.brand}"></div>
+      <button class="btn" data-action="save-brand">Save</button>
+      <div style="margin-top:22px;border-top:1px solid var(--border);padding-top:16px;font-size:12.5px;color:var(--muted)">
+        <b style="color:var(--ink-2)">Data source:</b> Live · this build shows only real, connected agent data (no sample numbers).<br>
+        <b style="color:var(--ink-2)">Storage:</b> Synced to your private cloud backend — same data on every device.<br>
+        <b style="color:var(--ink-2)">Signed in as:</b> ${AUTH.email||'—'}
+      </div>
+      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px;display:flex;gap:8px">
+        <button class="btn ghost sm" data-action="reset">Reset workspace to Day 0</button>
+        <button class="btn ghost sm" data-action="logout">Log out</button>
+      </div>
+    </div>`;
+}
+
+/* ---------------- BUSINESS DETAIL ---------------- */
+function chartEmpty(){return `<div class="emptybox">No activity in this period yet.<br>Data appears here once agents start working.</div>`;}
+
+function renderDetail(id){
+  const b = STATE.businesses.find(x=>x.id===id);
+  if(!b) {STATE.detailId=null; return renderOverview();}
+  if(!b.agents){
+    return `<div class="back" data-action="back">← Back</div>
+      <div class="topbar"><div><div class="crumb"><b>${STATE.brand}</b> · ${b.name}</div><h1>${b.name}</h1></div></div>
+      <div class="panel"><div class="emptybox" style="padding:46px">
+        <div style="font-size:28px;margin-bottom:10px">${b.code}</div>
+        <b style="color:var(--ink-2);font-size:15px">${b.status==='paused'?'This business is on hold':'Blueprint ready — not launched'}</b>
+        <p style="max-width:440px;margin:8px auto 18px">${b.desc}</p>
+        <button class="btn" data-action="launch" data-biz="${b.id}">${b.status==='paused'?'Resume business':'Launch this agent team'}</button></div></div>`;
+  }
+  const conn = connectedCount(b);
+  const anyLive = conn>0;
+  const funnel = b.funnel.map((f,i)=>{
+    const max = b.funnel[0].v||1; const pct=f.v/max*100;
+    const cv = i===0? (f.v?'100%':'—') : (b.funnel[i-1].v? Math.round(f.v/b.funnel[i-1].v*100)+'%':'—');
+    return `<div class="funnel-row"><div class="fl">${f.stage}</div>
+      <div class="fbar-wrap">${f.v?`<div class="fbar" style="width:${Math.max(pct,6)}%;background:${f.c}">${f.v}</div>`:''}</div>
+      <div class="fpct">${cv}</div></div>`;
+  }).join('');
+  const funnelBlock = anyLive ? funnel : chartEmpty();
+
+  const agents = b.agents.map(a=>{
+    const stTxt = a.status==='paused'?'Paused':a.connected?'Running':'Idle · not connected';
+    const stCls = a.status==='paused'?'paused':a.connected?'running':'idle';
+    const metrics = a.m2 ? a.m2 : a.metrics;
+    const mHtml = metrics.map(m=>`<div><div class="aml">${m[0]}</div><div class="amv">${m[1]}</div></div>`).join('');
+    const scoreColor = a.score==null?'var(--muted)':a.score>=85?'var(--good)':a.score>=75?'var(--s1)':'var(--warning)';
+    const fb = !a.connected ? 'Not connected yet. Connect this agent to its tool to start producing real data.'
+             : a.status==='paused' ? 'Paused by you — not working right now. Resume when ready.'
+             : 'Live and collecting its first real results in this period.';
+    let ctrl;
+    if(!a.connected) ctrl=`<button class="btn sm" data-action="connect" data-biz="${b.id}" data-agent="${a.id}">Connect</button>`;
+    else if(a.status==='paused') ctrl=`<button class="btn sm" data-action="resume" data-biz="${b.id}" data-agent="${a.id}">Resume</button>`;
+    else ctrl=`<button class="btn sm ghost" data-action="pause" data-biz="${b.id}" data-agent="${a.id}">Pause</button>`;
+    return `<div class="agent ${a.status==='paused'?'paused':''}">
+      <div class="agent-h"><div class="agent-av" style="background:${a.color}">${initials(a.name)}</div>
+        <div><div class="an">${a.name}</div><div class="ar">${a.role}</div></div>
+        <span class="status ${stCls}"><span class="sd"></span>${stTxt}</span></div>
+      <div class="agent-metrics">${mHtml}</div>
+      <div class="score-wrap"><span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Performance</span>
+        <div class="score-bar"><div class="score-fill" style="width:${a.score||0}%;background:${scoreColor}"></div></div>
+        <span class="score-num" style="color:${scoreColor}">${a.score==null?'—':a.score}</span></div>
+      <div class="agent-foot"><div class="feedback">${fb}</div>${ctrl}</div></div>`;
+  }).join('');
+
+  const pauseAllBtn = anyLive
+    ? `<button class="btn ghost sm" data-action="pause-all" data-biz="${b.id}">Pause all</button>`
+    : `<button class="btn sm" data-action="connect-all" data-biz="${b.id}">Connect all</button>`;
+
+  return `<div class="back" data-action="back">← Back to portfolio</div>
+    <div class="topbar"><div><div class="crumb"><b>${STATE.brand}</b> · ${b.name}</div><h1>${b.name}</h1>
+      <div class="sub">${b.niche||''}</div></div>
+      <div style="display:flex;gap:10px;align-items:center"><span class="pill"><span class="d" style="${anyLive?'background:var(--good)':''}"></span> ${anyLive?conn+' agent'+(conn===1?'':'s')+' live':'Setup · 0 live'}</span>${pauseAllBtn}</div></div>
+    ${filterBar()}
+    <div class="stat-tiles">
+      <div class="st"><div class="stl">Revenue</div><div class="stv">${money(b.revenue)}</div><div class="std">${PERIOD_LABEL[STATE.period]}</div></div>
+      <div class="st"><div class="stl">Net margin</div><div class="stv">—</div><div class="std">once revenue starts</div></div>
+      <div class="st"><div class="stl">Team live</div><div class="stv">${conn}<small style="font-size:13px;color:var(--muted)">/${b.agents.length}</small></div><div class="std">${anyLive?'working now':'connect agents to begin'}</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="panel"><h4>Client acquisition funnel</h4><div class="p-sub">${PERIOD_LABEL[STATE.period]} · leads → qualified → demo → outreach → close</div>${funnelBlock}</div>
+      <div class="panel"><h4>Revenue vs. cost</h4><div class="p-sub">${PERIOD_LABEL[STATE.period]}</div>${chartEmpty()}</div>
+    </div>
+    <div class="section-h"><h2>The agent team</h2><span class="hint">Real names · connect or pause each teammate individually</span></div>
+    <div class="agents-grid">${agents}</div>`;
+}
+
+/* ---------------- PERSISTENCE + CLOUD SYNC ---------------- */
+const AUTH = {
+  api:   (localStorage.getItem('mobhq_api')   || ''),
+  token: (localStorage.getItem('mobhq_token') || ''),
+  email: (localStorage.getItem('mobhq_email') || '')
+};
+function apiUrl(path){ return (AUTH.api||'').replace(/\/$/,'') + path; }
+function apiFetch(path, opts){
+  opts = opts || {};
+  const headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
+  if(AUTH.token) headers['Authorization'] = 'Bearer ' + AUTH.token;
+  return fetch(apiUrl(path), Object.assign({}, opts, {headers}));
+}
+function serializeState(){
+  return { brand:STATE.brand, period:STATE.period, customFrom:STATE.customFrom, customTo:STATE.customTo,
+           businesses:STATE.businesses, selected:[...STATE.selected] };
+}
+function hydrateState(s){
+  if(!s || typeof s!=='object') return;
+  if(s.brand) STATE.brand = s.brand;
+  if(s.period) STATE.period = s.period;
+  STATE.customFrom = s.customFrom||''; STATE.customTo = s.customTo||'';
+  if(Array.isArray(s.businesses) && s.businesses.length) STATE.businesses = s.businesses;
+  if(Array.isArray(s.selected)) STATE.selected = new Set(s.selected);
+}
+function loadState(){ // local cache (offline fallback)
+  try{ const raw = localStorage.getItem('mobhq_v1'); if(raw) hydrateState(JSON.parse(raw)); }catch(e){}
+}
+const SYNC_LABEL = {saving:'Saving…', synced:'✓ Synced to cloud', offline:'⚠ Offline · cached', error:'⚠ Sync error', idle:''};
+function setSync(s){ const el=document.getElementById('syncTxt'); if(el) el.textContent = SYNC_LABEL[s]||''; }
+let _syncTimer=null;
+function queueSync(){
+  try{ localStorage.setItem('mobhq_v1', JSON.stringify(serializeState())); }catch(e){}
+  if(!(AUTH.token && AUTH.api)) return;
+  setSync('saving');
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(async ()=>{
+    try{
+      const r = await apiFetch('/api/state', {method:'PUT', body:JSON.stringify({data:serializeState()})});
+      setSync(r.ok ? 'synced' : 'error');
+    }catch(e){ setSync('offline'); }
+  }, 700);
+}
+function saveState(){ queueSync(); }
+
+/* ---------------- ROUTER ---------------- */
+function render(){
+  const main = document.getElementById('main');
+  if(STATE.detailId){ main.innerHTML = renderDetail(STATE.detailId); }
+  else if(STATE.view==='overview') main.innerHTML = renderOverview();
+  else if(STATE.view==='businesses') main.innerHTML = renderBusinesses();
+  else if(STATE.view==='agents') main.innerHTML = renderAgents();
+  else if(STATE.view==='finance') main.innerHTML = renderFinance();
+  else if(STATE.view==='settings') main.innerHTML = renderSettings();
+  updateChrome();
+  saveState();
+}
+
+/* ---------------- MODAL ---------------- */
+function openModal(html){document.getElementById('modalBox').innerHTML=html;document.getElementById('modalBg').classList.add('on');}
+function closeModal(){document.getElementById('modalBg').classList.remove('on');}
+function newBizModal(){
+  openModal(`<h3>New business</h3><p>Spin up a new venture with its own AI agent team.</p>
+    <div class="field"><label>Business name</label><input id="nbName" placeholder="e.g. RankRise SEO"></div>
+    <div class="field"><label>Short code (2 letters)</label><input id="nbCode" maxlength="2" placeholder="RR"></div>
+    <div class="field"><label>What it does</label><textarea id="nbDesc" placeholder="One line about the business"></textarea></div>
+    <div class="modal-actions"><button class="btn ghost" data-action="close-modal">Cancel</button><button class="btn" data-action="create-biz">Create</button></div>`);
+}
+
+/* ---------------- ACTIONS ---------------- */
+function findBiz(id){return STATE.businesses.find(b=>b.id===id);}
+function agentGo(bizId, agentId, to){
+  const b=findBiz(bizId); const a=b.agents.find(x=>x.id===agentId);
+  if(to==='connect'){a.connected=true;a.status='running';a.score=a.score??(70+Math.round(20*(a.id.length%5)/5));}
+  if(to==='pause'){a.status='paused';}
+  if(to==='resume'){a.status='running';}
+  render();
+}
+
+document.addEventListener('click', e=>{
+  const nav = e.target.closest('.nav-item');
+  if(nav){STATE.view=nav.dataset.view;STATE.detailId=null;STATE.ui.bizDD=false;render();return;}
+  const bizCardEl = e.target.closest('[data-biz]:not([data-action])');
+  if(bizCardEl && !e.target.closest('[data-action]')){STATE.detailId=bizCardEl.dataset.biz;STATE.ui.bizDD=false;render();return;}
+  const per = e.target.closest('[data-period]');
+  if(per){STATE.period=per.dataset.period;render();return;}
+  const act = e.target.closest('[data-action]');
+  if(act){
+    const a=act.dataset.action, biz=act.dataset.biz, agent=act.dataset.agent;
+    if(a==='toggle-dd'){STATE.ui.bizDD=!STATE.ui.bizDD;render();}
+    else if(a==='sel-all'){STATE.businesses.forEach(b=>STATE.selected.add(b.id));render();}
+    else if(a==='sel-none'){STATE.selected.clear();render();}
+    else if(a==='export'){exportData();}
+    else if(a==='new-biz'){newBizModal();}
+    else if(a==='close-modal'){closeModal();}
+    else if(a==='create-biz'){createBiz();}
+    else if(a==='back'){STATE.detailId=null;STATE.view='overview';render();}
+    else if(a==='connect'){agentGo(biz,agent,'connect');toast('Agent connected — now live');}
+    else if(a==='pause'){agentGo(biz,agent,'pause');toast('Agent paused');}
+    else if(a==='resume'){agentGo(biz,agent,'resume');toast('Agent resumed');}
+    else if(a==='pause-all'){const b=findBiz(biz);b.agents.forEach(x=>{if(x.connected)x.status='paused';});render();toast('All agents paused');}
+    else if(a==='connect-all'){const b=findBiz(biz);b.agents.forEach(x=>{x.connected=true;x.status='running';x.score=x.score??80;});render();toast('All agents connected');}
+    else if(a==='launch'){const b=findBiz(biz);b.status='setup';b.code=b.code;b.niche=b.desc;b.revenue=0;b.clients=0;b.cost=0;b.agents=makeTeam();b.funnel=emptyFunnel();render();toast('Agent team launched — connect agents to go live');}
+    else if(a==='save-brand'){const v=document.getElementById('setBrand').value.trim();if(v){STATE.brand=v;render();toast('Workspace renamed to '+v);}}
+    else if(a==='reset'){resetWorkspace();}
+    else if(a==='logout'){logout();}
+    return;
+  }
+  // click outside dropdown closes it
+  if(STATE.ui.bizDD && !e.target.closest('.dd')){STATE.ui.bizDD=false;render();}
+});
+
+document.addEventListener('change', e=>{
+  const chk=e.target.closest('[data-check]');
+  if(chk){const id=chk.dataset.check; chk.checked?STATE.selected.add(id):STATE.selected.delete(id); STATE.ui.bizDD=true; render(); return;}
+  const dt=e.target.closest('[data-date]');
+  if(dt){STATE[dt.dataset.date==='from'?'customFrom':'customTo']=dt.value;}
+});
+document.getElementById('modalBg').addEventListener('click',e=>{if(e.target.id==='modalBg')closeModal();});
+
+function createBiz(){
+  const name=document.getElementById('nbName').value.trim();
+  const code=(document.getElementById('nbCode').value.trim()||name.slice(0,2)).toUpperCase();
+  const desc=document.getElementById('nbDesc').value.trim()||'New venture.';
+  if(!name){toast('Give it a name first');return;}
+  const id='biz_'+Math.abs(name.split('').reduce((h,c)=>((h<<5)-h+c.charCodeAt(0))|0,7));
+  STATE.businesses.push({id,code,name,status:'setup',desc,niche:desc,revenue:0,clients:0,cost:0,agents:makeTeam(),funnel:emptyFunnel()});
+  STATE.selected.add(id);
+  closeModal();render();toast(name+' created');
+}
+
+/* reset helper — wipes saved state back to Day 0 (local + cloud) */
+async function resetWorkspace(){
+  try{localStorage.removeItem('mobhq_v1');}catch(e){}
+  if(AUTH.token && AUTH.api){ try{ await apiFetch('/api/state',{method:'PUT',body:JSON.stringify({data:{}})}); }catch(e){} }
+  location.reload();
+}
+window.resetWorkspace = resetWorkspace;
+
+function exportData(){
+  const snap={workspace:STATE.brand, period:STATE.period, generated:new Date().toISOString(),
+    businesses:STATE.businesses.map(b=>({name:b.name,status:b.status,revenue:b.revenue||0,clients:b.clients||0,
+      agentsLive:b.agents?connectedCount(b):0, agents:b.agents?b.agents.map(a=>({name:a.name,status:a.status,connected:a.connected})):[]}))};
+  const blob=new Blob([JSON.stringify(snap,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const link=document.createElement('a');
+  link.href=url; link.download='mob-hq-export.json'; document.body.appendChild(link); link.click(); link.remove();
+  toast('Exported current view');
+}
+
+/* ---------------- AUTH FLOW ---------------- */
+const $ = id => document.getElementById(id);
+function authErr(m){ $('auErr').textContent = m||''; }
+
+async function refreshRegState(){
+  const base = ($('auApi').value.trim() || AUTH.api).replace(/\/$/,'');
+  if(!base) return;
+  try{
+    const r = await fetch(base + '/api/status');
+    const j = await r.json();
+    $('auReg').style.display = j.registrationOpen ? 'block' : 'none';
+    $('auHint').textContent = j.registrationOpen
+      ? 'First time here? Create your owner account — only the first account is allowed.'
+      : 'Enter your email and password to sign in.';
+  }catch(e){ $('auHint').textContent = 'Could not reach that backend URL yet.'; }
+}
+
+async function doAuth(path){
+  const api = $('auApi').value.trim().replace(/\/$/,'');
+  const email = $('auEmail').value.trim();
+  const pass = $('auPass').value;
+  if(!api){ authErr('Enter your backend URL first'); return; }
+  if(!email || !pass){ authErr('Email and password required'); return; }
+  authErr('');
+  try{
+    const r = await fetch(api + path, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email, password:pass})});
+    const j = await r.json();
+    if(!r.ok){ authErr(j.error || 'Something went wrong'); return; }
+    AUTH.api = api; AUTH.token = j.token; AUTH.email = j.email;
+    localStorage.setItem('mobhq_api', api);
+    localStorage.setItem('mobhq_token', j.token);
+    localStorage.setItem('mobhq_email', j.email);
+    await loadFromServer();
+    showApp();
+  }catch(e){ authErr('Could not reach the backend — check the URL and that it is deployed'); }
+}
+
+async function loadFromServer(){
+  try{
+    const r = await apiFetch('/api/state');
+    if(r.ok){ const j = await r.json(); if(j.data && Object.keys(j.data).length) hydrateState(j.data); setSync('synced'); }
+  }catch(e){ setSync('offline'); }
+}
+function showApp(){ document.body.classList.add('authed'); render(); }
+function logout(){
+  AUTH.token=''; localStorage.removeItem('mobhq_token');
+  document.body.classList.remove('authed');
+  $('auPass').value=''; authErr(''); refreshRegState();
+}
+
+$('auLogin').addEventListener('click', ()=>doAuth('/api/login'));
+$('auReg').addEventListener('click', ()=>doAuth('/api/register'));
+$('auApi').addEventListener('blur', refreshRegState);
+$('auPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doAuth('/api/login'); });
+
+/* ---------------- BOOT ---------------- */
+async function boot(){
+  loadState();                 // seed from local cache (offline fallback)
+  $('auApi').value = AUTH.api || '';
+  if(AUTH.token && AUTH.api){
+    try{
+      const r = await apiFetch('/api/state');
+      if(r.ok){ const j = await r.json(); if(j.data && Object.keys(j.data).length) hydrateState(j.data); setSync('synced'); showApp(); return; }
+      // 401 or other → fall through to the login screen
+    }catch(e){ setSync('offline'); showApp(); return; }  // unreachable → open cached copy offline
+  }
+  document.body.classList.remove('authed');
+  refreshRegState();
+}
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+# Netlify config for the MOB HQ frontend.
+# If you connect this repo to Netlify, set the publish directory to "web".
+[build]
+  publish = "."
