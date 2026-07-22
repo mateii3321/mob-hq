@@ -48,6 +48,14 @@ async function initDb() {
       data JSONB NOT NULL DEFAULT '{}'::jsonb,
       updated_at TIMESTAMPTZ DEFAULT now()
     );`);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS demos (
+      slug TEXT PRIMARY KEY,
+      name TEXT,
+      html TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      updated_at TIMESTAMPTZ DEFAULT now()
+    );`);
   console.log('DB ready.');
 }
 
@@ -129,6 +137,37 @@ app.put('/api/state', auth, async (req, res) => {
     [req.user.uid, data]
   );
   res.json({ ok: true, savedAt: new Date().toISOString() });
+});
+
+/* ---------- demo hosting: Miku publishes sites here, prospects view them ---------- */
+// Publish/update a demo (owner only).
+app.post('/api/demos', auth, async (req, res) => {
+  try {
+    const { slug, html, name } = req.body || {};
+    if (!slug || !/^[a-z0-9-]{2,80}$/.test(slug)) return res.status(400).json({ error: 'Invalid slug' });
+    if (typeof html !== 'string' || html.length < 20) return res.status(400).json({ error: 'Missing html' });
+    await pool.query(
+      `INSERT INTO demos (slug, html, name, updated_at) VALUES ($1,$2,$3, now())
+       ON CONFLICT (slug) DO UPDATE SET html = EXCLUDED.html, name = EXCLUDED.name, updated_at = now()`,
+      [slug, html, name || slug]
+    );
+    res.json({ ok: true, url: '/demo/' + slug });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Could not publish demo' }); }
+});
+
+// List published demos (owner only) — for the dashboard.
+app.get('/api/demos', auth, async (_req, res) => {
+  const { rows } = await pool.query('SELECT slug, name, updated_at FROM demos ORDER BY updated_at DESC');
+  res.json({ demos: rows });
+});
+
+// Public: serve a demo site by slug (this is the link that goes in the outreach email).
+app.get('/demo/:slug', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT html FROM demos WHERE slug=$1', [req.params.slug]);
+    if (!rows[0]) return res.status(404).type('html').send('<h1 style="font-family:sans-serif">Demo not found</h1>');
+    res.type('html').send(rows[0].html);
+  } catch (e) { console.error(e); res.status(500).type('html').send('Error'); }
 });
 
 initDb()
